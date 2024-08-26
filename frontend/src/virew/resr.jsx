@@ -1,34 +1,45 @@
 <template>
-  <div class="container card">
-    <div class="card-header">
-      <h4>Product</h4>
-      <router-link to="/ca" class="btn btn-primary float-end">Add New</router-link>
-    </div>
-    <div>
-      <table class="table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Price</th>
-            <th>QTY</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(item, index) in products" :key="index">
-            <td>{{ index + 1 }}</td>
-            <td>{{ item.names }}</td>
-            <td>{{ item.price }}</td>
-            <td>{{ item.qty }}</td>
-            <td>
-              <router-link :to="{name: 'EditProduct', params:{id: item.id} }" class="btn btn-primary">Edit</router-link>
-              <button @click="deleteProduct(item.id)" class="btn btn-danger">Delete</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+  <div :class="'container p-5 shadow-lg'">
+    <form @submit.prevent="createUser">
+      <div class="form-group">
+        <label for="name">Name:</label>
+        <input
+          type="text"
+          v-model="User.names"
+          class="form-control"
+          id="name"
+          required
+        />
+      </div>
+      <div class="form-group">
+        <label for="email">Email:</label>
+        <input
+          type="email"
+          v-model="User.email"
+          class="form-control"
+          id="email"
+          required
+        />
+      </div>
+      <div class="form-group">
+        <label for="pass">Password:</label>
+        <input
+          type="password"
+          v-model="User.pass"
+          class="form-control"
+          id="pass"
+          required
+        />
+      </div>
+      <div class="form-group">
+        <label for="rol">Role:</label>
+        <select v-model="User.rol" class="form-control" id="rol">
+          <option value="admin">Admin</option>
+          <option value="user">User</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary">Register</button>
+    </form>
   </div>
 </template>
 
@@ -36,243 +47,139 @@
 import axios from 'axios';
 
 export default {
-  name: 'ProductPage',
+  name: 'RegisterPage',
+
   data() {
     return {
-      products: []
+      User: {
+        names: "",
+        email: "",
+        pass: "",
+        rol: "",
+      },
     };
   },
-  mounted() {
-    this.fetchProducts();
-  },
+
   methods: {
-    async fetchProducts() {
+    async createUser() {
       try {
-        const response = await axios.get('http://localhost:6900/products');
-        this.products = response.data;
+        const response = await axios.post(
+          "http://localhost:6900/authuser",
+          this.User
+        );
+        console.log("User created:", response.data);
+
+        // Clear the form
+        this.User = { names: "", email: "", pass: "", rol: "" };
+
+        // Redirect or give feedback
+        this.$router.push("/");  // or wherever you want to redirect
       } catch (error) {
-        console.error('Error fetching products:', error);
+        console.error("Error creating user:", error);
       }
     },
-    async deleteProduct(id) {
-      try {
-        await axios.delete(`http://localhost:6900/products/${id}`);
-        this.products = this.products.filter(product => product.id !== id);
-      } catch (error) {
-        console.error('Error deleting product:', error);
-      }
-    }
-  }
-};
+  },
+}
 </script>
 
 
 
 
-............................
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 <template>
-  <div class="container card">
-    <div class="card-header">
-      <router-link to="/ca" class="btn btn-primary"> Add New </router-link>
-
-      <div class="row align-items-center float-end">
-        <div class="col-12 col-md-6 mb-2 mb-md-0">
-          <div class="search-bar">
-            <input
-              type="text"
-              class="form-control"
-              v-model="searchQuery"
-              @input="fetchProducts(1, searchQuery, itemsPerPage)"
-              placeholder="Search Products"
-            />
-          </div>
-        </div>
-        <div class="col-12 col-md-6">
-          <div class="d-flex align-items-center">
-            <p class="mb-0 me-2">ចំនួនសរុប</p>
-            <select
-              v-model="itemsPerPage"
-              @change="fetchProducts(1, searchQuery, itemsPerPage)"
-              class="form-select"
-            >
-              <option
-                v-for="value in [5, 10, 15, 20, 50, 100]"
-                :key="value"
-                :value="value"
-              >
-                {{ value }}
-              </option>
-            </select>
-          </div>
-        </div>
+  <div class="container p-5 shadow-lg">
+    <form @submit.prevent="loginUser">
+      <div class="form-group">
+        <label for="email">Email:</label>
+        <input
+          type="email"
+          v-model="User.email"
+          class="form-control"
+          id="email"
+          required
+        />
       </div>
-    </div>
-
-    <div>
-      <table class="table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Price</th>
-            <th>QTY</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="products.length === 0">
-            <td colspan="5">No products found</td>
-          </tr>
-          <tr v-else v-for="(item, index) in products" :key="index">
-            <td>{{ (currentPage - 1) * itemsPerPage + index + 1 }}</td>
-            <td>{{ item.names }}</td>
-            <td>{{ item.price }}</td>
-            <td>{{ item.qty }}</td>
-            <td>
-              <router-link
-                :to="{ name: 'EditProduct', params: { id: item.id } }"
-                class="btn btn-primary"
-              >
-                Edit
-              </router-link>
-              <button @click="deleteProduct(item.id)" class="btn btn-danger">
-                Delete
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <nav aria-label="Page navigation">
-        <ul class="pagination justify-content-end">
-          <li class="page-item">
-            <a
-              @click="fetchProducts(1, searchQuery, itemsPerPage)"
-              :disabled="currentPage === 1"
-              class="page-link"
-              href="#"
-              >«</a
-            >
-          </li>
-          <li class="page-item">
-            <a
-              @click="fetchProducts(currentPage - 1, searchQuery, itemsPerPage)"
-              :disabled="currentPage === 1"
-              class="page-link"
-              href="#"
-              >‹</a
-            >
-          </li>
-          <li class="page-item" v-for="page in paginatedPages" :key="page">
-            <a v-if="page === '...'" class="page-link" href="#">{{ page }}</a>
-            <a
-              v-else
-              @click="fetchProducts(page, searchQuery, itemsPerPage)"
-              :class="{ active: currentPage === page }"
-              class="page-link"
-              href="#"
-              >{{ page }}</a
-            >
-          </li>
-          <li class="page-item">
-            <a
-              @click="fetchProducts(currentPage + 1, searchQuery, itemsPerPage)"
-              :disabled="currentPage === totalPages"
-              class="page-link"
-              href="#"
-              >›</a
-            >
-          </li>
-          <li class="page-item">
-            <a
-              @click="fetchProducts(totalPages, searchQuery, itemsPerPage)"
-              :disabled="currentPage === totalPages"
-              class="page-link"
-              href="#"
-              >»</a
-            >
-          </li>
-        </ul>
-      </nav>
-    </div>
+      <div class="form-group">
+        <label for="pass">Password:</label>
+        <input
+          type="password"
+          v-model="User.pass"
+          class="form-control"
+          id="pass"
+          required
+        />
+      </div>
+      <button type="submit" class="btn btn-primary">Login</button>
+    </form>
   </div>
 </template>
 
 <script>
-import axios from "axios";
+import axios from 'axios';
+import { useToast } from 'vue-toastification'; // Import toast hook
 
 export default {
-  name: "ProductPage",
+  name: 'LoginPage',
+
+  setup() {
+    const toast = useToast(); // Initialize toast
+    return { toast };
+  },
+
   data() {
     return {
-      products: [],
-      searchQuery: "",
-      currentPage: 1,
-      itemsPerPage: 3, // Default value
-      totalProducts: 0,
+      User: {
+        email: "",
+        pass: "",
+      },
     };
   },
-  computed: {
-    totalPages() {
-      return Math.ceil(this.totalProducts / this.itemsPerPage);
+
+ methods: {
+    async loginUser() {
+        try {
+            console.log('Attempting to log in with:', this.User);
+
+            const response = await axios.post('http://localhost:6900/authlogin', this.User);
+            console.log('Login successful, response:', response.data);
+
+            localStorage.setItem('token', response.data.token);
+            localStorage.setItem('rol', response.data.rol);
+            localStorage.setItem('names', response.data.names);
+
+            this.toast.success('Login successful!', {
+                position: "top-center",
+                autoClose: 3000,
+            });
+
+            this.$router.push("/register");
+        } catch (error) {
+            console.error('Login error:', error.response?.data || error.message);
+
+            this.toast.error('Login failed. Please check your credentials.', {
+                position: "top-center",
+                autoClose: 3000,
+            });
+        }
     },
-    paginatedPages() {
-      const pages = [];
-      const startPage = Math.max(2, this.currentPage - 2);
-      const endPage = Math.min(this.totalPages - 1, this.currentPage + 2);
+}
 
-      if (this.currentPage > 3) {
-        pages.push(1);
-      }
-
-      if (this.currentPage > 4) {
-        pages.push("...");
-      }
-
-      for (let i = startPage; i <= endPage; i++) {
-        pages.push(i);
-      }
-
-      if (this.currentPage < this.totalPages - 3) {
-        pages.push("...");
-      }
-
-      if (this.currentPage < this.totalPages - 2) {
-        pages.push(this.totalPages);
-      }
-
-      return pages;
-    },
-  },
-  methods: {
-    async fetchProducts(page = 1, search = "", limit = this.itemsPerPage) {
-      try {
-        const response = await axios.get("http://localhost:6900/products", {
-          params: {
-            page,
-            search,
-            limit,
-          },
-        });
-        this.products = response.data.data;
-        this.totalProducts = response.data.total;
-        this.currentPage = page;
-      } catch (error) {
-        console.error("Error fetching products:", error);
-      }
-    },
-    async deleteProduct(id) {
-      try {
-        await axios.delete(`http://localhost:6900/products/${id}`);
-        this.products = this.products.filter((product) => product.id !== id);
-      } catch (error) {
-        console.error("Error deleting product:", error);
-      }
-    },
-  },
-  mounted() {
-    this.fetchProducts();
-  },
 };
 </script>
+
+<style>
+/* Add custom styles if needed */
+</style>

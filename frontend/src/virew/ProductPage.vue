@@ -1,6 +1,9 @@
 
 <template>
   <div class="container card">
+    <Navbar />
+    <h1>Name : {{ user.names }}</h1>
+    <p>Your role is: {{ user.rol }}</p>
     <div class="card-header">
       <router-link to="/ca" class="btn btn-primary"> Add New </router-link>
 
@@ -128,15 +131,24 @@
 
 <script>
 import axios from "axios";
+import Navbar from "../components/Navbar.vue";
 
 export default {
+  components: {
+    Navbar,
+  },
   name: "ProductPage",
   data() {
     return {
+      user: {
+        names: localStorage.getItem("names") || "",
+        rol: localStorage.getItem("rol") || "",
+      },
+      // user: JSON.parse(localStorage.getItem("user")),
       products: [],
       searchQuery: "",
       currentPage: 1,
-      itemsPerPage: 15, // Default value
+      itemsPerPage: 20, // Default value
       totalProducts: 0,
     };
   },

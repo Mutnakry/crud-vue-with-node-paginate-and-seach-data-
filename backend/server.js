@@ -2,6 +2,8 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const mysql = require('mysql');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 const port = 6900;
@@ -23,17 +25,6 @@ db.connect(err => {
     console.log('MySQL Connected...');
 });
 
-// Routes for CRUD operations
-
-// app.get('/products', (req, res) => {
-//     const sql = 'SELECT * FROM products';
-//     db.query(sql, (err, results) => {
-//         if (err) {
-//             throw err;
-//         }
-//         res.send(results);
-//     });
-// });
 
 
 // Get paginated and searched products
@@ -60,19 +51,6 @@ app.get('/products', (req, res) => {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 app.get('/products/:id', (req, res) => {
     const id = req.params.id;
     const sql = 'SELECT * FROM products where id= ?';
@@ -83,10 +61,6 @@ app.get('/products/:id', (req, res) => {
         res.send(results);
     });
 });
-
-
-
-
 
 
 app.post('/addproducts', (req, res) => {
@@ -104,9 +78,6 @@ app.post('/addproducts', (req, res) => {
     });
 });
 
-
-  
-
 app.put('/updateproducts/:id', (req, res) => {
     const id =req.params.id;
     const { names, price, qty } = req.body;
@@ -115,10 +86,8 @@ app.put('/updateproducts/:id', (req, res) => {
         if (err) return res.status(500).json({ error: err });
         res.status(200).json(result);
     });
-   
-  });
-  
 
+  });
 
 app.delete('/products/:id', (req, res) => {
     const sql = `DELETE FROM products WHERE id = ${req.params.id}`;
@@ -129,6 +98,56 @@ app.delete('/products/:id', (req, res) => {
         res.send('Product deleted...');
     });
 });
+
+
+app.post('/authuser', async (req, res) => {
+    try {
+        const { names, email, pass, rol } = req.body; // Extracting user details from the request body
+        const hashedPassword = await bcrypt.hash(pass, 8); // Hashing the password with a salt of 8 rounds
+        const query = 'INSERT INTO user (names, email, pass, rol) VALUES (?, ?, ?, ?)'; // SQL query to insert user into the database
+
+        db.query(query, [names, email, hashedPassword, rol], (err, results) => {
+            if (err) {
+                return res.status(500).send('Error registering user'); // Return error if there's a problem with the query
+            }
+            res.status(201).send('User registered successfully'); // Send success message on successful registration
+        });
+    } catch (error) {
+        res.status(500).send('Error registering user'); // Catch any errors during the process
+    }
+});
+
+
+app.post('/authlogin', async (req, res) => {
+    const { names, pass } = req.body;
+
+  const query = 'SELECT * FROM user WHERE names = ?';
+  db.query(query, [names], (err, results) => {
+    if (err) {
+      return res.status(500).send('Error logging in');
+    }
+    if (results.length === 0) {
+      return res.status(404).send('User not found');
+    }
+
+    const user = results[0];
+    const isPasswordValid = bcrypt.compareSync(pass, user.pass);
+
+    if (!isPasswordValid) {
+      return res.status(401).send('Invalid password');
+    }
+
+    const token = jwt.sign({ id: user.id, rol: user.rol }, 'your_jwt_secret', { expiresIn: 86400 }); // 24 hours
+
+    res.status(200).send({ auth: true, token, rol: user.rol, names: user.names });
+  });
+});
+
+
+
+
+
+
 
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);

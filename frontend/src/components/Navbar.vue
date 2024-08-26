@@ -12,6 +12,7 @@
         <li class="nav-item">
           <a class="nav-link" href="/studentlist">Sale</a>
         </li>
+          <button @click="logout">Logout</button>
       </ul>
     </nav>
   </div>
@@ -19,5 +20,12 @@
 <script>
 export default {
   name: 'NavBar',
+   methods: {
+    logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      this.$router.push('/login');
+    },
+  },
 }
 </script>
